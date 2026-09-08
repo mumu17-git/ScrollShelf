@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -76,8 +75,8 @@ public class ScrollShelfBlock extends Block implements EntityBlock {
             if (!level.isClientSide && level.getBlockEntity(pos) instanceof ScrollShelfBlockEntity shelf) {
                 ItemStack drop = new ItemStack(ModItems.SCROLL_SHELF_ITEM.get());
 
-                CompoundTag beTag = new CompoundTag();
-                shelf.saveAdditional(beTag, level.registryAccess());
+                CompoundTag beTag = shelf.createScrollsSyncTag();
+                beTag.putString("id", "scrollshelf:scroll_shelf_block_entity");
 
                 drop.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(beTag));
 

@@ -1,7 +1,6 @@
 package com.mumu17.scrollshelf.shelf;
 
 import com.mumu17.scrollshelf.ModBlockEntities;
-import com.mumu17.scrollshelf.ScrollShelf;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.item.Scroll;
@@ -76,6 +75,7 @@ public class ScrollShelfBlockEntity extends BlockEntity {
     }
 
     public void loadScrollData(CompoundTag tag) {
+        this.SCROLLS.clear();
         if (tag.contains("scrolls")) {
             CompoundTag scrolls = tag.getCompound("scrolls");
             for (String scrollId : scrolls.getAllKeys()) {
