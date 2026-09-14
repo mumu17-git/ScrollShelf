@@ -1,0 +1,8 @@
+{
+	"variants": {
+		"facing=north": { "model": "scrollshelf:block/scroll_shelf", "y": 0 },
+		"facing=east":  { "model": "scrollshelf:block/scroll_shelf", "y": 90 },
+		"facing=south": { "model": "scrollshelf:block/scroll_shelf", "y": 180 },
+		"facing=west":  { "model": "scrollshelf:block/scroll_shelf", "y": 270 }
+	}
+}
