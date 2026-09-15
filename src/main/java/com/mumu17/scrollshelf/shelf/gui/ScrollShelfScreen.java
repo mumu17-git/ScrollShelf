@@ -372,12 +372,8 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             this.levels = new ArrayList<>(levels);
             Collections.sort(this.levels);
             setLevelAndCount(0);
-            ItemStack scroll = new ItemStack(ItemRegistry.SCROLL.get());
-            ISpellContainer.createScrollContainer(spell, level, scroll);
-            this.itemStack = scroll.copy();
-            List<Component> lines = TooltipsUtils.formatScrollTooltip(scroll, Minecraft.getInstance().player);
             this.tooltipLines = new ArrayList<>();
-            this.tooltipLines.addAll(lines);
+            setTooltipLines();
         }
 
         @Override
@@ -390,18 +386,22 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             return tooltipLines;
         }
 
+        public void setTooltipLines() {
+            ItemStack scroll = new ItemStack(ItemRegistry.SCROLL.get());
+            ISpellContainer.createScrollContainer(this.spell, this.level, scroll);
+            this.itemStack = scroll.copy();
+            List<Component> lines = TooltipsUtils.formatScrollTooltip(scroll, Minecraft.getInstance().player);
+            this.tooltipLines.clear();
+            this.tooltipLines.addAll(lines);
+        }
+
         public boolean onMouseScrolled(double scrollY) {
             if (scrollY > 0) {
                 this.nextLevelIndex();
             } else if (scrollY < 0) {
                 this.prevLevelIndex();
             }
-            ItemStack scroll = new ItemStack(ItemRegistry.SCROLL.get());
-            ISpellContainer.createScrollContainer(spell, level, scroll);
-            this.itemStack = scroll.copy();
-            List<Component> lines = TooltipsUtils.formatScrollTooltip(scroll, Minecraft.getInstance().player);
-            this.tooltipLines.clear();
-            this.tooltipLines.addAll(lines);
+            setTooltipLines();
             return true;
         }
 

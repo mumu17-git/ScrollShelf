@@ -1,6 +1,7 @@
 package com.mumu17.scrollshelf.shelf;
 
 import com.mumu17.scrollshelf.ModBlockEntities;
+import com.mumu17.scrollshelf.ScrollShelf;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.item.Scroll;
@@ -58,10 +59,12 @@ public class ScrollShelfBlockEntity extends BlockEntity {
             int currentCount = SCROLLS.getOrDefault(idLevelMap, 0);
             ItemStack scroll = new ItemStack(ItemRegistry.SCROLL.get());
             ISpellContainer.createScrollContainer(SpellRegistry.getSpell(id), level, scroll);
-            if (player != null) {
+            if (player != null && InventoryUtils.hasSpaceFor(player, scroll)) {
                 player.addItem(scroll);
             } else if (this.level != null) {
-                this.level.addFreshEntity(new ItemEntity(this.level, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), scroll));
+                ItemEntity itemEntity = new ItemEntity(this.level, this.getBlockPos().getCenter().x, this.getBlockPos().getCenter().y+1.0D, this.getBlockPos().getCenter().z, scroll);
+                itemEntity.setDeltaMovement(0.0D, 0.2D, 0.0D);
+                this.level.addFreshEntity(itemEntity);
             }
             SCROLLS.put(idLevelMap, currentCount - 1);
             this.setChanged();
