@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ABC",
+    "DED",
+    "FGF"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:paper"
+    },
+    "B": {
+      "item": "irons_spellbooks:common_ink"
+    },
+    "C": {
+      "tag": "minecraft:wooden_slabs"
+    },
+    "D": {
+      "item": "minecraft:bookshelf"
+    },
+    "E": {
+      "item": "minecraft:lectern"
+    },
+    "F": {
+      "tag": "minecraft:planks"
+    },
+    "G": {
+      "item": "irons_spellbooks:divine_pearl"
+    }
+  },
+  "result": {
+    "item": "scrollshelf:scroll_shelf",
+    "count": 1
+  }
+}
