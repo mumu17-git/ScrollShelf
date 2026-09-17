@@ -393,6 +393,8 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             List<Component> lines = TooltipsUtils.formatScrollTooltip(scroll, Minecraft.getInstance().player);
             this.tooltipLines.clear();
             this.tooltipLines.addAll(lines);
+            Component countLine = Component.translatable("tooltip.scrollshelf.scroll_count").append(String.valueOf(this.count)).withStyle(ChatFormatting.GRAY);
+            this.tooltipLines.add(countLine);
         }
 
         public boolean onMouseScrolled(double scrollY) {
