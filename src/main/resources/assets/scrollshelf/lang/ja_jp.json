@@ -1,5 +1,6 @@
 {
   "menu.scrollshelf.scroll_shelf.title": "スクロール書庫",
   "block.scrollshelf.scroll_shelf": "スクロール書庫",
-  "item.scrollshelf.scroll_shelf": "スクロール書庫"
+  "item.scrollshelf.scroll_shelf": "スクロール書庫",
+  "tooltip.scrollshelf.scroll_count": "x"
 }
