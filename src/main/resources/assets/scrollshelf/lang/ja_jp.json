@@ -2,5 +2,6 @@
   "menu.scrollshelf.scroll_shelf.title": "スクロール書庫",
   "block.scrollshelf.scroll_shelf": "スクロール書庫",
   "item.scrollshelf.scroll_shelf": "スクロール書庫",
-  "tooltip.scrollshelf.scroll_count": "x"
+  "tooltip.scrollshelf.scroll_count": "x",
+  "tooltip.scrollshelf.scroll_craftable": "作成可能"
 }

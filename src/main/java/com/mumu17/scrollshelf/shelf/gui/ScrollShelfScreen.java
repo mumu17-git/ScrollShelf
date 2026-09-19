@@ -23,10 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> {
@@ -145,7 +142,7 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
         final int xOffset = this.leftPos + 29;
         final int yOffset = this.topPos + 20;
 
-        record ButtonData(AbstractSpell spell, List<Integer> levels) {}
+        record ButtonData(AbstractSpell spell, List<Integer> levels, List<Integer> craftableLevels) {}
         List<ButtonData> allButtons = new ArrayList<>();
 
         for (AbstractSpell spell : SpellRegistry.getEnabledSpells()) {
@@ -168,9 +165,18 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
                     levels.add(spellLevel);
                 }
             }
+            List<Integer> craftableLevels = new ArrayList<>();
+            if (!levels.isEmpty()) {
+                for (int spellLevel = levels.get(0); spellLevel <= spell.getMaxLevel(); spellLevel++) {
+                    if (this.menu.getBlockEntity() != null && this.minecraft != null && this.minecraft.player != null
+                            && this.menu.getBlockEntity().canCraft(spell, getBaseLevel(levels, spellLevel), spellLevel, this.minecraft.player.getInventory().items)) {
+                        craftableLevels.add(spellLevel);
+                    }
+                }
+            }
 
             if (!levels.isEmpty()) {
-                allButtons.add(new ButtonData(spell, levels));
+                allButtons.add(new ButtonData(spell, levels, craftableLevels));
             }
         }
 
@@ -195,14 +201,28 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
                     data.spell().getSpellIconResource(),
                     btn -> onIconClicked(
                             data.spell(),
-                            btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0)
+                            getBaseLevel(data.levels(), btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0)),
+                            btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0),
+                            btn instanceof CustomImageButton customBtn && !customBtn.levels.get(customBtn.level)
                     ),
                     data.spell(),
-                    data.levels()
+                    data.levels(),
+                    data.craftableLevels()
             ));
             this.spellButtons.add(button);
             visibleIndex++;
         }
+    }
+
+    public int getBaseLevel(List<Integer> levels, int level) {
+        if (levels.isEmpty()) return level;
+        int baseLevel = levels.get(0);
+        for (int l : levels) {
+            if (l < level && l > baseLevel) {
+                baseLevel = l;
+            }
+        }
+        return baseLevel;
     }
 
     public void rebuildSpellButtons() {
@@ -329,11 +349,11 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    private void onIconClicked(AbstractSpell spell, int level) {
+    private void onIconClicked(AbstractSpell spell, int baseLevel, int level, boolean needCraft) {
         if (this.menu.getBlockEntity() == null) {
             return;
         }
-        ExtractScrollPayload payload = new ExtractScrollPayload(this.menu.getBlockEntity().getBlockPos(), spell.getSpellId(), level);
+        ExtractScrollPayload payload = new ExtractScrollPayload(this.menu.getBlockEntity().getBlockPos(), spell.getSpellId(), baseLevel, level, needCraft);
         ModNetworks.sendToServer(payload);
         rebuildSpellButtons();
     }
@@ -355,7 +375,7 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
         private int level;
         private int count;
         private final List<Component> tooltipLines;
-        private final List<Integer> levels;
+        private final Map<Integer, Boolean> levels; // true: available, false: craftable
         private int levelIndex = 0;
         private ItemStack itemStack;
 
@@ -363,14 +383,22 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
                                  ResourceLocation texture,
                                  OnPress onPress,
                                  AbstractSpell spell,
-                                 List<Integer> levels) {
+                                 List<Integer> levels,
+                                 List<Integer> craftableLevels) {
 
             super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
             this.menu = menu;
             this.texture = texture;
             this.spell = spell;
-            this.levels = new ArrayList<>(levels);
-            Collections.sort(this.levels);
+            this.levels = new HashMap<>();
+            for (Integer level : craftableLevels) {
+                this.levels.put(level, false);
+            }
+            for (Integer level : levels) {
+                this.levels.put(level, true);
+            }
+            Object[] sortMap = this.levels.keySet().toArray();
+            Arrays.sort(sortMap);
             setLevelAndCount(0);
             this.tooltipLines = new ArrayList<>();
             setTooltipLines();
@@ -393,8 +421,13 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             List<Component> lines = TooltipsUtils.formatScrollTooltip(scroll, Minecraft.getInstance().player);
             this.tooltipLines.clear();
             this.tooltipLines.addAll(lines);
-            Component countLine = Component.translatable("tooltip.scrollshelf.scroll_count").append(String.valueOf(this.count)).withStyle(ChatFormatting.GRAY);
-            this.tooltipLines.add(countLine);
+            if (this.count > 0) {
+                Component countLine = Component.translatable("tooltip.scrollshelf.scroll_count").append(String.valueOf(this.count)).withStyle(ChatFormatting.GRAY);
+                this.tooltipLines.add(countLine);
+            } else {
+                Component craftableLine = Component.translatable("tooltip.scrollshelf.scroll_craftable").withStyle(ChatFormatting.GRAY);
+                this.tooltipLines.add(craftableLine);
+            }
         }
 
         public boolean onMouseScrolled(double scrollY) {
@@ -422,10 +455,14 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
         public void setLevelAndCount(int index) {
             if (index >= 0 && index < levels.size()) {
                 levelIndex = index;
-                level = levels.get(levelIndex);
-                Object2IntMap<String> idLevelMap = new Object2IntOpenHashMap<>();
-                idLevelMap.put(spell.getSpellId(), level);
-                count = this.menu.getScrolls().getInt(idLevelMap);
+                level = levels.keySet().stream().toList().get(levelIndex);
+                if (levels.get(level)) {
+                    Object2IntMap<String> idLevelMap = new Object2IntOpenHashMap<>();
+                    idLevelMap.put(spell.getSpellId(), level);
+                    count = this.menu.getScrolls().getInt(idLevelMap);
+                } else {
+                    count = 0;
+                }
             }
         }
 
