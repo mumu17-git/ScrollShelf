@@ -102,7 +102,6 @@ public class ScrollShelfBlockEntity extends BlockEntity {
     }
 
     public void craftAndExtractScroll(AbstractSpell spell, int baseLevel, int spellLevel, NonNullList<ItemStack> items, ServerPlayer player) {
-        ScrollShelf.LOGGER("can craft spell: " + spell.getSpellId() + " level: " + spellLevel + " items: " + items);
         if (!canCraft(spell, baseLevel, spellLevel, items)) return;
         outer_loop:
         for (int i = baseLevel; i < spellLevel; i++) {
@@ -119,8 +118,6 @@ public class ScrollShelfBlockEntity extends BlockEntity {
                 }
             }
         }
-
-        ScrollShelf.LOGGER("Crafting and extracting scroll: " + spell.getSpellId() + " Level: " + spellLevel);
 
         extractScroll(spell.getSpellId(), spellLevel, player, true);
         deleteScroll(spell.getSpellId(), baseLevel);
@@ -155,8 +152,6 @@ public class ScrollShelfBlockEntity extends BlockEntity {
                         continue outer_loop;
                     }
                 }
-                if (spell.getSpellId().equals("irons_spellbooks:acupuncture"))
-                    ScrollShelf.LOGGER("Cannot craft spell: " + spell.getSpellId() + " level: " + (i + 1) + " missing ink of rarity: " + nextRarity + " available inks: " + itemMap);
                 return false;
             }
         }
