@@ -2,5 +2,6 @@
   "menu.scrollshelf.scroll_shelf.title": "Scroll Shelf",
   "block.scrollshelf.scroll_shelf": "Scroll Shelf",
   "item.scrollshelf.scroll_shelf": "Scroll Shelf",
-  "tooltip.scrollshelf.scroll_count": "x"
+  "tooltip.scrollshelf.scroll_count": "x",
+  "tooltip.scrollshelf.scroll_craftable": "Craftable"
 }
