@@ -25,6 +25,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -49,7 +50,8 @@ public class ScrollShelf {
     }
 
     public static void LOGGER(String format, Object... arguments) {
-        LOGGER.debug(format, arguments);
+        if (!FMLLoader.isProduction())
+            LOGGER.debug(format, arguments);
     }
 
     @SubscribeEvent

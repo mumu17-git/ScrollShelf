@@ -24,6 +24,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
+import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> {
@@ -33,6 +34,7 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
 
     private EditBox searchBox;
     private final List<CustomImageButton> spellButtons = new ArrayList<>();
+    private final Map<String, Integer> savedLevelIndices = new HashMap<>();
 
     private int lastScrollsVersion = -1;
 
@@ -194,6 +196,8 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             int x = xOffset + (visibleIndex % ICON_COLS) * ICON_SIZE;
             int y = yOffset + (visibleIndex / ICON_COLS) * ICON_SIZE;
 
+            int defaultLevel = savedLevelIndices.getOrDefault(data.spell().getSpellId(), data.levels().get(0));
+
             CustomImageButton button = this.addRenderableWidget(new CustomImageButton(
                     this.menu,
                     x, y,
@@ -201,13 +205,15 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
                     data.spell().getSpellIconResource(),
                     btn -> onIconClicked(
                             data.spell(),
-                            getBaseLevel(data.levels(), btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0)),
-                            btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0),
-                            btn instanceof CustomImageButton customBtn && !customBtn.levels.get(customBtn.level)
+                            getBaseLevel(data.levels(), (savedLevelIndices.containsKey(data.spell().getSpellId()) ? savedLevelIndices.getOrDefault(data.spell().getSpellId(), data.spell().getMinLevel()) : btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0))),
+                            (savedLevelIndices.containsKey(data.spell().getSpellId()) ? savedLevelIndices.getOrDefault(data.spell().getSpellId(), data.spell().getMinLevel()) : btn instanceof CustomImageButton customBtn ? customBtn.level : data.levels().get(0)),
+                            btn instanceof CustomImageButton customBtn && !customBtn.levels.getOrDefault((savedLevelIndices.containsKey(data.spell().getSpellId()) ? savedLevelIndices.getOrDefault(data.spell().getSpellId(), data.spell().getMinLevel()) : customBtn.level), false)
                     ),
                     data.spell(),
                     data.levels(),
-                    data.craftableLevels()
+                    data.craftableLevels(),
+                    defaultLevel,
+                    newLevel -> savedLevelIndices.put(data.spell().getSpellId(), newLevel)
             ));
             this.spellButtons.add(button);
             visibleIndex++;
@@ -226,6 +232,10 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
     }
 
     public void rebuildSpellButtons() {
+        for (CustomImageButton b : this.spellButtons) {
+            savedLevelIndices.put(b.spell.getSpellId(), Math.max(b.level, b.spell.getMinLevel()));
+        }
+
         for (CustomImageButton b : this.spellButtons) {
             this.removeWidget(b);
         }
@@ -378,18 +388,22 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
         private final Map<Integer, Boolean> levels; // true: available, false: craftable
         private int levelIndex = 0;
         private ItemStack itemStack;
+        private final Consumer<Integer> onLevelChanged;
 
         public CustomImageButton(ScrollShelfMenu menu, int x, int y, int width, int height,
                                  ResourceLocation texture,
                                  OnPress onPress,
                                  AbstractSpell spell,
                                  List<Integer> levels,
-                                 List<Integer> craftableLevels) {
+                                 List<Integer> craftableLevels,
+                                 int defaultViewLevel,
+                                 Consumer<Integer> onLevelChanged) {
 
             super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
             this.menu = menu;
             this.texture = texture;
             this.spell = spell;
+            this.onLevelChanged = onLevelChanged;
             this.levels = new HashMap<>();
             for (Integer level : craftableLevels) {
                 this.levels.put(level, false);
@@ -399,7 +413,23 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             }
             Object[] sortMap = this.levels.keySet().toArray();
             Arrays.sort(sortMap);
-            setLevelAndCount(0);
+            int l = 0;
+            for (int i = defaultViewLevel; i >= spell.getMinLevel(); i--) {
+                if (this.levels.containsKey(i)) {
+                    l = this.levels.keySet().stream().toList().indexOf(i);
+                    break;
+                }
+            }
+            if (l <= 0) {
+                for (int i = defaultViewLevel; i <= spell.getMaxLevel(); i++) {
+                    if (this.levels.containsKey(i)) {
+                        l = this.levels.keySet().stream().toList().indexOf(i);
+                        break;
+                    }
+                }
+            }
+            setLevelAndCount(l);
+            notifyLevelChanged();
             this.tooltipLines = new ArrayList<>();
             setTooltipLines();
         }
@@ -444,12 +474,14 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
             if (levels.isEmpty()) return;
             levelIndex = (levelIndex + 1) % levels.size();
             setLevelAndCount(levelIndex);
+            notifyLevelChanged();
         }
 
         public void prevLevelIndex() {
             if (levels.isEmpty()) return;
             levelIndex = (levelIndex - 1 + levels.size()) % levels.size();
             setLevelAndCount(levelIndex);
+            notifyLevelChanged();
         }
 
         public void setLevelAndCount(int index) {
@@ -463,6 +495,12 @@ public class ScrollShelfScreen extends AbstractContainerScreen<ScrollShelfMenu> 
                 } else {
                     count = 0;
                 }
+            }
+        }
+
+        private void notifyLevelChanged() {
+            if (this.onLevelChanged != null) {
+                this.onLevelChanged.accept(this.level);
             }
         }
     }
