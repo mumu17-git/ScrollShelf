@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.slf4j.Logger;
 
 @Mod(ScrollShelf.MODID)
@@ -45,6 +46,7 @@ public class ScrollShelf {
     }
 
     public static void LOGGER(String format, Object... arguments) {
-        LOGGER.debug(format, arguments);
+        if (!FMLLoader.isProduction())
+            LOGGER.debug(format, arguments);
     }
 }
